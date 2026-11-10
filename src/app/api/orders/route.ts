@@ -9,12 +9,15 @@ import {
   createOrder,
   ensureOrderGiftColumns,
   type CreateOrderInput,
+  InsufficientStockError,
+  InsufficientLoyaltyPointsError,
+  CouponUnavailableError,
 } from "@/lib/db/orders";
 import { getUserContactById } from "@/lib/db/users";
 import { sendOrderConfirmationEmail } from "@/lib/email";
 import { findActiveCouponByCode } from "@/lib/db/coupons";
 import { query } from "@/lib/sql";
-import { createPendingLoyaltyTransaction, createRedeemedTransaction, getAvailableBalance } from "@/lib/db/loyalty";
+import { createPendingLoyaltyTransaction, getAvailableBalance, ensureLoyaltyTable } from "@/lib/db/loyalty";
 import { getPointsForAmount } from "@/lib/utils";
 import type { IOrder, IOrderItem, OrderStatus } from "@/types";
 import type { LoyaltyTier } from "@/store/loyaltyStore";
@@ -157,9 +160,23 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { items, shippingAddress, paymentMethod, couponCode, giftWrap, giftMessage, pointsRedeemed } = body;
 
-    if (!items?.length || !shippingAddress || !paymentMethod) {
-      return errorResponse("Missing order details");
+    if (!Array.isArray(items) || items.length === 0 || items.length > 50 || !shippingAddress || !paymentMethod) {
+      return errorResponse("Missing or invalid order details");
     }
+
+    for (const item of items) {
+      if (
+        !item ||
+        typeof item.productId !== "string" ||
+        !Number.isSafeInteger(item.quantity) ||
+        item.quantity < 1 ||
+        item.quantity > 20
+      ) {
+        return errorResponse("Each item must have a valid product and quantity between 1 and 20");
+      }
+    }
+
+    await ensureLoyaltyTable();
 
     let subtotal = 0;
     const orderItems: IOrderItem[] = [];
@@ -193,15 +210,18 @@ export async function POST(req: NextRequest) {
 
     let discount = 0;
     let couponIdToIncrement: string | null = null;
+    let couponMaxUses: number | undefined;
     if (couponCode) {
       const coupon = await findActiveCouponByCode(couponCode);
       if (coupon && coupon.usedCount < coupon.maxUses) {
         if (subtotal >= coupon.minOrder) {
-          discount =
+          const calculatedDiscount =
             coupon.discountType === "percentage"
               ? (subtotal * coupon.discountValue) / 100
               : coupon.discountValue;
+          discount = Math.min(subtotal, Math.max(0, calculatedDiscount));
           couponIdToIncrement = coupon._id;
+          couponMaxUses = coupon.maxUses;
         }
       }
     }
@@ -211,27 +231,35 @@ export async function POST(req: NextRequest) {
 
     // --- Server-side points redemption validation (fix #1 & #2) ---
     let pointsDiscount = 0;
-    const requestedPoints = typeof pointsRedeemed === "number" && pointsRedeemed > 0 ? Math.floor(pointsRedeemed) : 0;
+    let pointsToRedeem = 0;
+    const requestedPoints =
+      typeof pointsRedeemed === "number" && Number.isSafeInteger(pointsRedeemed) && pointsRedeemed > 0
+        ? pointsRedeemed
+        : 0;
     if (requestedPoints > 0) {
       const availableBalance = await getAvailableBalance(user!.userId);
       if (requestedPoints > availableBalance) {
-        return errorResponse("Insufficient loyalty points");
+        return errorResponse("Insufficient loyalty points", 409);
       }
-      // 100 points = ₹1, cap so total never goes below 0
-      pointsDiscount = Math.min(
-        Math.floor(requestedPoints / 100),
-        subtotal - discount + shipping + giftFee
-      );
+
+      // 100 points = ₹1. Redeem only complete ₹1 units and never more than
+      // the remaining payable amount; the unused points stay in the account.
+      const remainingPayable = Math.max(0, subtotal - discount + shipping + giftFee);
+      pointsToRedeem = Math.floor(
+        Math.min(requestedPoints, Math.floor(remainingPayable) * 100) / 100
+      ) * 100;
+      pointsDiscount = pointsToRedeem / 100;
     }
 
-    const total = Math.max(0, subtotal - discount - pointsDiscount + shipping + giftFee);
+    const totalDiscount = discount + pointsDiscount;
+    const total = Math.max(0, subtotal - totalDiscount + shipping + giftFee);
 
     const payload: CreateOrderInput = {
       orderNumber: generateOrderNumber(),
       userId: user!.userId,
       items: orderItems,
       subtotal,
-      discount,
+      discount: totalDiscount,
       shipping,
       total,
       status: "processing",
@@ -240,26 +268,13 @@ export async function POST(req: NextRequest) {
       shippingAddress,
       stockDecrements,
       couponIdToIncrement,
+      couponMaxUses,
+      pointsToRedeem,
       giftWrap: !!giftWrap,
       giftMessage: giftWrap ? giftMessage ?? null : null,
     };
 
     const order = await createOrder(payload);
-
-    // Record redeemed points (validated above)
-    if (requestedPoints > 0) {
-      try {
-        await createRedeemedTransaction({
-          userId: user!.userId,
-          orderId: order._id,
-          orderNumber: order.orderNumber,
-          points: requestedPoints,
-          description: `Points redeemed for order ${order.orderNumber}`,
-        });
-      } catch (loyaltyErr) {
-        console.error("Loyalty redeemed transaction skipped:", loyaltyErr);
-      }
-    }
 
     // Earn points — tier-aware multiplier (fix #3 & #9)
     try {
@@ -293,6 +308,15 @@ export async function POST(req: NextRequest) {
 
     return jsonResponse({ order }, 201);
   } catch (err) {
+    if (err instanceof InsufficientStockError) {
+      return errorResponse("Some items are no longer available in the requested quantity. Refresh your cart.", 409);
+    }
+    if (err instanceof InsufficientLoyaltyPointsError) {
+      return errorResponse("Your loyalty points balance changed. Refresh and try again.", 409);
+    }
+    if (err instanceof CouponUnavailableError) {
+      return errorResponse("This coupon has reached its usage limit or is no longer active.", 409);
+    }
     console.error("Orders POST:", err);
     return errorResponse("Failed to create order", 500);
   }
