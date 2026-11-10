@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthUser } from "./auth";
+import { getUserRoleById } from "./db/users";
 
 export function jsonResponse<T>(data: T, status = 200) {
   // Keep backwards compatibility with existing handlers that already include their own shapes.
@@ -46,9 +47,12 @@ export async function requireAuth() {
 export async function requireAdmin() {
   const result = await requireAuth();
   if (result.error) return result;
-  if (result.user!.role !== "admin") {
+
+  const account = await getUserRoleById(result.user!.userId);
+  if (!account || !account.isVerified || account.role !== "admin") {
     return { error: errorResponse("Forbidden", 403, "FORBIDDEN"), user: null };
   }
+
   return result;
 }
 
