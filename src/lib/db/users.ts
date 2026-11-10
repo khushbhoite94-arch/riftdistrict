@@ -66,6 +66,8 @@ export async function ensureUserAuthColumns(): Promise<void> {
     IF COL_LENGTH('users','otp_expiry') IS NULL ALTER TABLE users ADD otp_expiry DATETIME2 NULL;
     IF COL_LENGTH('users','reset_otp_hash') IS NULL ALTER TABLE users ADD reset_otp_hash NVARCHAR(255) NULL;
     IF COL_LENGTH('users','reset_otp_expiry') IS NULL ALTER TABLE users ADD reset_otp_expiry DATETIME2 NULL;
+    IF COL_LENGTH('users','otp_attempts') IS NULL ALTER TABLE users ADD otp_attempts INT NOT NULL CONSTRAINT DF_users_otp_attempts DEFAULT 0;
+    IF COL_LENGTH('users','otp_locked_until') IS NULL ALTER TABLE users ADD otp_locked_until DATETIME2 NULL;
   `);
 }
 
@@ -78,6 +80,8 @@ export interface AuthAccount {
   isVerified: boolean;
   otpHash: string | null;
   otpExpiry: Date | null;
+  otpAttempts: number;
+  otpLockedUntil: Date | null;
   resetOtpHash: string | null;
   resetOtpExpiry: Date | null;
 }
@@ -89,6 +93,7 @@ export async function getAuthByEmail(email: string): Promise<AuthAccount | null>
     `SELECT TOP 1 id AS [_id], name, email, password, role,
             is_verified AS isVerified,
             otp_hash AS otpHash, otp_expiry AS otpExpiry,
+            otp_attempts AS otpAttempts, otp_locked_until AS otpLockedUntil,
             reset_otp_hash AS resetOtpHash, reset_otp_expiry AS resetOtpExpiry
      FROM users WHERE email = @email`,
     { email }
@@ -115,16 +120,45 @@ export async function setUserOtp(
 ): Promise<void> {
   await ensureUserAuthColumns();
   await query(
-    `UPDATE users SET otp_hash = @otpHash, otp_expiry = @expiry WHERE id = @userId`,
+    `UPDATE users
+     SET otp_hash = @otpHash, otp_expiry = @expiry,
+         otp_attempts = 0, otp_locked_until = NULL
+     WHERE id = @userId`,
     { userId, otpHash, expiry }
   );
+}
+
+
+/** Atomically record a failed verification attempt and lock after five failures. */
+export async function recordOtpFailure(
+  userId: string
+): Promise<{ attempts: number; lockedUntil: Date | null }> {
+  await ensureUserAuthColumns();
+  const res = await query<{ attempts: number; lockedUntil: Date | null }>(
+    `UPDATE users
+     SET otp_attempts = otp_attempts + 1,
+         otp_locked_until = CASE
+           WHEN otp_attempts + 1 >= 5 THEN DATEADD(MINUTE, 15, SYSUTCDATETIME())
+           ELSE otp_locked_until
+         END,
+         otp_hash = CASE WHEN otp_attempts + 1 >= 5 THEN NULL ELSE otp_hash END,
+         otp_expiry = CASE WHEN otp_attempts + 1 >= 5 THEN NULL ELSE otp_expiry END
+     OUTPUT INSERTED.otp_attempts AS attempts,
+            INSERTED.otp_locked_until AS lockedUntil
+     WHERE id = @userId AND is_verified = 0`,
+    { userId }
+  );
+  return res.recordset[0] ?? { attempts: 5, lockedUntil: null };
 }
 
 /** Mark an account verified and clear its verification OTP. */
 export async function markUserVerified(userId: string): Promise<void> {
   await ensureUserAuthColumns();
   await query(
-    `UPDATE users SET is_verified = 1, otp_hash = NULL, otp_expiry = NULL WHERE id = @userId`,
+    `UPDATE users
+     SET is_verified = 1, otp_hash = NULL, otp_expiry = NULL,
+         otp_attempts = 0, otp_locked_until = NULL
+     WHERE id = @userId`,
     { userId }
   );
 }
