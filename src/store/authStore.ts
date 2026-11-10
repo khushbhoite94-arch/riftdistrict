@@ -34,12 +34,14 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: async () => {
     set({ user: null });
 
-    await fetch("/api/auth/me", {
-      method: "DELETE",
-      credentials: "include",
-    });
-
-    window.location.href = "/";
+    try {
+      await fetch("/api/auth/me", {
+        method: "DELETE",
+        credentials: "include",
+      });
+    } finally {
+      window.location.href = "/";
+    }
   },
 
   fetchUser: async () => {
