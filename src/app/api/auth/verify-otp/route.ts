@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getAuthByEmail, markUserVerified } from "@/lib/db/users";
+import { getAuthByEmail, markUserVerified, recordOtpFailure } from "@/lib/db/users";
 import { createRefreshSession } from "@/lib/db/sessions";
 import { verifyOtp, isOtpExpired } from "@/lib/otp";
 import {
@@ -30,6 +30,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Account already verified" }, { status: 400 });
     }
 
+    if (account.otpLockedUntil && new Date(account.otpLockedUntil).getTime() > Date.now()) {
+      return NextResponse.json(
+        { message: "Too many incorrect attempts. Request a new code after the lock expires." },
+        { status: 429 }
+      );
+    }
+
     if (!account.otpHash || isOtpExpired(account.otpExpiry)) {
       return NextResponse.json(
         { message: "Verification code has expired. Request a new one." },
@@ -39,7 +46,17 @@ export async function POST(req: NextRequest) {
 
     const valid = await verifyOtp(String(otp), account.otpHash);
     if (!valid) {
-      return NextResponse.json({ message: "Invalid verification code" }, { status: 400 });
+      const attempt = await recordOtpFailure(account._id);
+      if (attempt.lockedUntil) {
+        return NextResponse.json(
+          { message: "Too many incorrect attempts. Request a new verification code in 15 minutes." },
+          { status: 429 }
+        );
+      }
+      return NextResponse.json(
+        { message: "Invalid verification code", attemptsRemaining: Math.max(0, 5 - attempt.attempts) },
+        { status: 400 }
+      );
     }
 
     await markUserVerified(account._id);
