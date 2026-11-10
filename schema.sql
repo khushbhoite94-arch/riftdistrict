@@ -14,6 +14,8 @@ CREATE TABLE users (
   is_verified      BIT          NOT NULL DEFAULT 0,  -- email verification gate
   otp_hash         NVARCHAR(255) NULL,              -- hashed signup OTP
   otp_expiry       DATETIME2     NULL,
+  otp_attempts    INT           NOT NULL DEFAULT 0,
+  otp_locked_until DATETIME2    NULL,
   reset_otp_hash   NVARCHAR(255) NULL,              -- hashed password-reset OTP
   reset_otp_expiry DATETIME2     NULL,
   created_at DATETIME2        NOT NULL DEFAULT SYSUTCDATETIME(),
