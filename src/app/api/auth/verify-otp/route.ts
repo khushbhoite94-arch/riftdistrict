@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
     const code = String(otp ?? "");
 
-    if (!normalizedEmail || !/^\\d{4}$/.test(code)) {
+    if (!normalizedEmail || !/^\d{4}$/.test(code)) {
       return NextResponse.json({ message: "A valid email and four-digit code are required" }, { status: 400 });
     }
 
