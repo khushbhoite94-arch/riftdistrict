@@ -18,8 +18,6 @@ import {
   Package,
   Users,
   TrendingUp,
-  ArrowUpRight,
-  ArrowDownRight,
   Search,
   Eye,
   MoreVertical,
@@ -115,40 +113,30 @@ export default function AdminPage() {
     {
       label: "Revenue",
       value: stats?.totalRevenue ? formatPrice(stats.totalRevenue as number) : "₹0",
-      change: "+12.5%",
-      up: true,
       icon: DollarSign,
       color: "from-rift-orange to-rift-rust",
     },
     {
       label: "Orders",
       value: String(stats?.totalOrders ?? 0),
-      change: "+8.2%",
-      up: true,
       icon: ShoppingBag,
       color: "from-blue-500 to-cyan-400",
     },
     {
       label: "Products",
       value: String(stats?.totalProducts ?? 0),
-      change: "+3.1%",
-      up: true,
       icon: Package,
       color: "from-purple-500 to-pink-400",
     },
     {
       label: "Customers",
       value: String(stats?.totalCustomers ?? 0),
-      change: "+24.3%",
-      up: true,
       icon: Users,
       color: "from-emerald-500 to-teal-400",
     },
     {
       label: "Subscribers",
       value: String(stats?.subscribers ?? 0),
-      change: "+18.7%",
-      up: true,
       icon: TrendingUp,
       color: "from-amber-500 to-orange-400",
     },
@@ -182,9 +170,8 @@ export default function AdminPage() {
                 <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${kpi.color} flex items-center justify-center`}>
                   <Icon className="w-4 h-4 text-white" />
                 </div>
-                <span className={`flex items-center gap-0.5 text-[0.65rem] font-medium ${kpi.up ? "text-emerald-400" : "text-red-400"}`}>
-                  {kpi.up ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                  {kpi.change}
+                <span className="text-[0.6rem] text-rift-mist/35 uppercase tracking-wider">
+                  Current
                 </span>
               </div>
               <p className="text-xl font-semibold tracking-tight">{kpi.value}</p>
