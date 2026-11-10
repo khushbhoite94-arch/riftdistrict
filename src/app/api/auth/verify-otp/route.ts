@@ -16,12 +16,14 @@ import {
 export async function POST(req: NextRequest) {
   try {
     const { email, otp } = await req.json();
+    const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+    const code = String(otp ?? "");
 
-    if (!email || !otp) {
-      return NextResponse.json({ message: "Email and code are required" }, { status: 400 });
+    if (!normalizedEmail || !/^\\d{4}$/.test(code)) {
+      return NextResponse.json({ message: "A valid email and four-digit code are required" }, { status: 400 });
     }
 
-    const account = await getAuthByEmail(email);
+    const account = await getAuthByEmail(normalizedEmail);
     if (!account) {
       return NextResponse.json({ message: "Account not found" }, { status: 404 });
     }
@@ -44,7 +46,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const valid = await verifyOtp(String(otp), account.otpHash);
+    const valid = await verifyOtp(code, account.otpHash);
     if (!valid) {
       const attempt = await recordOtpFailure(account._id);
       if (attempt.lockedUntil) {
