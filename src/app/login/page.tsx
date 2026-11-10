@@ -46,13 +46,18 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.status === 403 && data.code === "EMAIL_NOT_VERIFIED") {
-        await fetch("/api/auth/resend-otp", {
+        const resend = await fetch("/api/auth/resend-otp", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email }),
         });
+        const resendData = await resend.json();
         setStep("otp");
-        setInfo("Your email isn't verified yet. We sent a fresh code.");
+        setInfo(
+          resend.ok
+            ? "Your email isn't verified yet. A verification code has been sent."
+            : resendData.message || "Your email isn't verified yet. Check your inbox for the active code."
+        );
         return;
       }
 
@@ -97,12 +102,17 @@ export default function LoginPage() {
     setError("");
     setInfo("");
     try {
-      await fetch("/api/auth/resend-otp", {
+      const res = await fetch("/api/auth/resend-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      setInfo("A new code has been sent.");
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.message || "Could not resend the code.");
+        return;
+      }
+      setInfo(data.message || "A new code has been sent.");
     } catch {
       setError("Could not resend the code. Try again.");
     }
