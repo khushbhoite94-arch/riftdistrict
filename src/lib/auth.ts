@@ -9,7 +9,7 @@ if (!JWT_SECRET) {
 }
 
 export const ACCESS_TOKEN_EXPIRES_IN = "30d";
-export const REFRESH_TOKEN_EXPIRES_IN = "30d";
+export const REFRESH_TOKEN_EXPIRES_IN = "60d";
 
 export interface JWTPayload {
   userId: string;
