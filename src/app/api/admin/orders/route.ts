@@ -53,7 +53,19 @@ export async function PATCH(req: NextRequest) {
     if (error) return error;
 
     const { orderId, status, trackingNumber } = await req.json();
-    if (!orderId || !status) return errorResponse("orderId and status required");
+    const allowedStatuses = ["pending", "processing", "shipped", "in-orbit", "delivered", "cancelled"];
+    if (
+      typeof orderId !== "string" ||
+      !orderId ||
+      typeof status !== "string" ||
+      !allowedStatuses.includes(status)
+    ) {
+      return errorResponse("A valid orderId and supported status are required", 400);
+    }
+    if (trackingNumber !== undefined && trackingNumber !== null &&
+        (typeof trackingNumber !== "string" || trackingNumber.length > 100)) {
+      return errorResponse("Tracking number must be 100 characters or fewer", 400);
+    }
 
     const order = await updateOrderStatus(
       orderId,
