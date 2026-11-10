@@ -11,15 +11,14 @@ import {
   AUTH_COOKIE_OPTIONS,
 } from "@/lib/auth";
 
-const REFRESH_MAX_AGE = 30 * 24 * 60 * 60;
+const ACCESS_MAX_AGE = 30 * 24 * 60 * 60;
+const REFRESH_MAX_AGE = 60 * 24 * 60 * 60;
 
 function unauthorized() {
   const response = NextResponse.json(
     { message: "Refresh session is invalid or expired. Please sign in again." },
     { status: 401 }
   );
-  response.cookies.delete(AUTH_COOKIE);
-  response.cookies.delete(REFRESH_COOKIE);
   return response;
 }
 
@@ -57,7 +56,7 @@ export async function POST(req: NextRequest) {
     const response = NextResponse.json({ success: true });
     response.cookies.set(AUTH_COOKIE, accessToken, {
       ...AUTH_COOKIE_OPTIONS,
-      maxAge: REFRESH_MAX_AGE,
+      maxAge: ACCESS_MAX_AGE,
     });
     response.cookies.set(REFRESH_COOKIE, refreshToken, {
       ...AUTH_COOKIE_OPTIONS,
