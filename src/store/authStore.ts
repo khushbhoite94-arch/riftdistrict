@@ -46,9 +46,21 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ loading: true });
 
     try {
-      const res = await fetch("/api/auth/me", {
+      let res = await fetch("/api/auth/me", {
         credentials: "include",
       });
+
+      if (res.status === 401) {
+        const refresh = await fetch("/api/auth/refresh", {
+          method: "POST",
+          credentials: "include",
+        });
+        if (refresh.ok) {
+          res = await fetch("/api/auth/me", {
+            credentials: "include",
+          });
+        }
+      }
 
       if (!res.ok) {
         set({ user: null, loading: false });
