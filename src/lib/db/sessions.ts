@@ -42,6 +42,7 @@ export async function rotateRefreshSession(input: {
     const revoked = await tx
       .request()
       .input("tokenIdHash", sql.NVarChar(255), input.currentTokenIdHash)
+      .input("userId", sql.UniqueIdentifier, input.userId)
       .query(
         `UPDATE refresh_sessions
          SET revoked_at = SYSUTCDATETIME()
