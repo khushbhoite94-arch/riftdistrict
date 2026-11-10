@@ -28,7 +28,7 @@ Create the SQL Server schema:
 npm run sql:setup
 ```
 
-**Admin:** `rift.admin.test@gmail.com` 24!/ `RiftAdmin2024`
+**Admin access:** Create or provision an administrator account through a trusted, private setup process. Never commit administrator credentials to the repository.
 
 ## Brand colors
 
