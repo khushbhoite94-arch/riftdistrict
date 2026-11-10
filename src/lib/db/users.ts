@@ -148,7 +148,8 @@ export async function recordOtpFailure(
   userId: string
 ): Promise<{ attempts: number; lockedUntil: Date | null }> {
   await ensureUserAuthColumns();
-  const res = await query<{ attempts: number; lockedUntil: Date | null }>(
+  // users has an AFTER UPDATE trigger, so avoid SQL Server OUTPUT on this update.
+  await query(
     `UPDATE users
      SET otp_attempts = otp_attempts + 1,
          otp_locked_until = CASE
@@ -157,9 +158,13 @@ export async function recordOtpFailure(
          END,
          otp_hash = CASE WHEN otp_attempts + 1 >= 5 THEN NULL ELSE otp_hash END,
          otp_expiry = CASE WHEN otp_attempts + 1 >= 5 THEN NULL ELSE otp_expiry END
-     OUTPUT INSERTED.otp_attempts AS attempts,
-            INSERTED.otp_locked_until AS lockedUntil
-     WHERE id = @userId AND is_verified = 0`,
+     WHERE id = @userId AND is_verified = 0 AND otp_attempts < 5
+       AND (otp_locked_until IS NULL OR otp_locked_until <= SYSUTCDATETIME())`,
+    { userId }
+  );
+  const res = await query<{ attempts: number; lockedUntil: Date | null }>(
+    `SELECT otp_attempts AS attempts, otp_locked_until AS lockedUntil
+     FROM users WHERE id = @userId`,
     { userId }
   );
   return res.recordset[0] ?? { attempts: 5, lockedUntil: null };
