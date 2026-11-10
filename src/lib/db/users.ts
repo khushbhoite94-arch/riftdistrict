@@ -152,15 +152,23 @@ export async function recordOtpFailure(
 }
 
 /** Mark an account verified and clear its verification OTP. */
-export async function markUserVerified(userId: string): Promise<void> {
+export async function markUserVerified(
+  userId: string,
+  expectedOtpHash: string
+): Promise<boolean> {
   await ensureUserAuthColumns();
-  await query(
+  const result = await query(
     `UPDATE users
      SET is_verified = 1, otp_hash = NULL, otp_expiry = NULL,
          otp_attempts = 0, otp_locked_until = NULL
-     WHERE id = @userId`,
-    { userId }
+     WHERE id = @userId AND is_verified = 0
+       AND otp_hash = @otpHash
+       AND otp_expiry > SYSUTCDATETIME()
+       AND otp_attempts < 5
+       AND (otp_locked_until IS NULL OR otp_locked_until <= SYSUTCDATETIME())`,
+    { userId, otpHash: expectedOtpHash }
   );
+  return (result.rowsAffected[0] ?? 0) === 1;
 }
 
 /** Store a freshly issued password-reset OTP (hashed) + expiry. */
