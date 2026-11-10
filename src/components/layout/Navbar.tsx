@@ -149,7 +149,7 @@ export default function Navbar() {
 
                 <div className="h-px bg-rift-mist/10 my-2 mx-6" />
 
-                {!isLoggedIn ? (
+                {authLoading ? null : !isLoggedIn ? (
                   <div className="flex flex-col gap-3 px-6 pt-2">
                     <Link
                       href="/login"
