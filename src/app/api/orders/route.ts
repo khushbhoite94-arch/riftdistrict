@@ -259,7 +259,7 @@ export async function POST(req: NextRequest) {
       userId: user!.userId,
       items: orderItems,
       subtotal,
-      discount: totalDiscount,
+      discount,
       shipping,
       total,
       status: "processing",
