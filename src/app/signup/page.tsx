@@ -92,12 +92,17 @@ export default function SignupPage() {
     setError("");
     setInfo("");
     try {
-      await fetch("/api/auth/resend-otp", {
+      const res = await fetch("/api/auth/resend-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      setInfo("A new code has been sent.");
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.message || "Could not resend the code.");
+        return;
+      }
+      setInfo(data.message || "A new code has been sent.");
     } catch {
       setError("Could not resend the code. Try again.");
     }
