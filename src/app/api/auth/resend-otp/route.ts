@@ -35,8 +35,8 @@ export async function POST(req: NextRequest) {
     }
 
     const otp = generateOtp();
-    await setUserOtp(account._id, await hashOtp(otp), otpExpiry());
     await sendVerificationEmail({ name: account.name, email: account.email }, otp);
+    await setUserOtp(account._id, await hashOtp(otp), otpExpiry());
 
     return NextResponse.json({
       success: true,
