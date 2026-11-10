@@ -61,7 +61,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await markUserVerified(account._id);
+    const markedVerified = await markUserVerified(account._id, account.otpHash);
+    if (!markedVerified) {
+      return NextResponse.json(
+        { message: "Verification code is no longer valid. Request a new code." },
+        { status: 409 }
+      );
+    }
 
     // Verified — log the user in (mirror the login token/session flow).
     const role = (account.role as "user" | "admin") || "user";
