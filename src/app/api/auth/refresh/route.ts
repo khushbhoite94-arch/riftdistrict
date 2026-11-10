@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rotateRefreshSession } from "@/lib/db/sessions";
+import { getUserRoleById } from "@/lib/db/users";
 import {
   signAccessToken,
   signRefreshToken,
@@ -29,6 +30,11 @@ export async function POST(req: NextRequest) {
 
     const payload = verifyRefreshToken(token);
     if (!payload?.userId || !payload?.tokenId || !payload?.role) {
+      return unauthorized();
+    }
+
+    const account = await getUserRoleById(payload.userId);
+    if (!account || !account.isVerified || account.role !== payload.role) {
       return unauthorized();
     }
 
