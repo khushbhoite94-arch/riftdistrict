@@ -5,6 +5,27 @@ export interface OrderRecord extends IOrder {
   orderNumber: string;
 }
 
+export class InsufficientStockError extends Error {
+  constructor() {
+    super("One or more products no longer have enough stock.");
+    this.name = "InsufficientStockError";
+  }
+}
+
+export class InsufficientLoyaltyPointsError extends Error {
+  constructor() {
+    super("Your loyalty points balance changed. Please refresh and try again.");
+    this.name = "InsufficientLoyaltyPointsError";
+  }
+}
+
+export class CouponUnavailableError extends Error {
+  constructor() {
+    super("This coupon is no longer available.");
+    this.name = "CouponUnavailableError";
+  }
+}
+
 const ORDER_COLUMNS = `
   id AS [_id], order_number AS orderNumber, user_id AS userId,
   subtotal, discount, shipping, total, status,
@@ -266,6 +287,8 @@ export interface CreateOrderInput {
   };
   stockDecrements: { productId: string; quantity: number }[];
   couponIdToIncrement?: string | null;
+  couponMaxUses?: number;
+  pointsToRedeem?: number;
   giftWrap?: boolean;
   giftMessage?: string | null;
 }
@@ -281,19 +304,55 @@ export async function createOrder(
   input: CreateOrderInput
 ): Promise<OrderRecord> {
   return withTransaction(async (tx) => {
+    if (input.pointsToRedeem && input.pointsToRedeem > 0) {
+      // Serialize redemptions for this account so concurrent checkouts cannot
+      // spend the same points balance.
+      await bind(new sql.Request(tx), { userId: input.userId }).query(
+        `SELECT id FROM users WITH (UPDLOCK, HOLDLOCK) WHERE id = @userId`
+      );
+      const balance = await bind(new sql.Request(tx), { userId: input.userId }).query<{ balance: number }>(
+        `SELECT ISNULL(SUM(
+           CASE
+             WHEN status = 'credited' AND type IN ('earned','adjusted') THEN points
+             WHEN type = 'redeemed' THEN -ABS(points)
+             WHEN type = 'reversed' THEN points
+             ELSE 0
+           END
+         ), 0) AS balance
+         FROM loyalty_transactions
+         WHERE user_id = @userId AND status IN ('credited','redeemed','reversed')`
+      );
+      if ((balance.recordset[0]?.balance ?? 0) < input.pointsToRedeem) {
+        throw new InsufficientLoyaltyPointsError();
+      }
+    }
+
     for (const dec of input.stockDecrements) {
-      await bind(new sql.Request(tx), {
+      const stockUpdate = await bind(new sql.Request(tx), {
         id: dec.productId,
         q: dec.quantity,
       }).query(
-        `UPDATE products SET stock = stock - @q WHERE id = @id`
+        `UPDATE products SET stock = stock - @q
+         WHERE id = @id AND stock >= @q`
       );
+      if ((stockUpdate.rowsAffected[0] ?? 0) !== 1) {
+        throw new InsufficientStockError();
+      }
     }
 
     if (input.couponIdToIncrement) {
-      await bind(new sql.Request(tx), { id: input.couponIdToIncrement }).query(
-        `UPDATE coupons SET used_count = used_count + 1 WHERE id = @id`
+      const couponUpdate = await bind(new sql.Request(tx), {
+        id: input.couponIdToIncrement,
+        maxUses: input.couponMaxUses ?? 0,
+      }).query(
+        `UPDATE coupons
+         SET used_count = used_count + 1
+         WHERE id = @id AND used_count < @maxUses AND active = 1
+           AND (expires_at IS NULL OR expires_at > SYSUTCDATETIME())`
       );
+      if ((couponUpdate.rowsAffected[0] ?? 0) !== 1) {
+        throw new CouponUnavailableError();
+      }
     }
 
     const inserted = await bind(new sql.Request(tx), {
@@ -330,6 +389,21 @@ export async function createOrder(
 
     const orderId = inserted.recordset[0]._id;
     const createdAt = inserted.recordset[0].createdAt;
+
+    if (input.pointsToRedeem && input.pointsToRedeem > 0) {
+      await bind(new sql.Request(tx), {
+        userId: input.userId,
+        orderId,
+        orderNumber: input.orderNumber,
+        points: input.pointsToRedeem,
+        description: `Points redeemed for order ${input.orderNumber}`,
+      }).query(
+        `INSERT INTO loyalty_transactions
+           (user_id, order_id, order_number, type, status, points, description)
+         VALUES
+           (@userId, @orderId, @orderNumber, 'redeemed', 'redeemed', @points, @description)`
+      );
+    }
 
     for (const item of input.items) {
       await bind(new sql.Request(tx), {
