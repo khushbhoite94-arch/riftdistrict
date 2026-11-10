@@ -1,32 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { getAuthByEmail, setUserOtp } from "@/lib/db/users";
-import { generateOtp, hashOtp, otpExpiry } from "@/lib/otp";
+import { generateOtp, hashOtp, otpExpiry, isOtpExpired } from "@/lib/otp";
 import { sendVerificationEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
-    const { email } = await req.json();
+    const body = await req.json();
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     if (!email) {
       return NextResponse.json({ message: "Email is required" }, { status: 400 });
     }
 
     const account = await getAuthByEmail(email);
-
-    // Only (re)send for an existing, still-unverified account. Respond
-    // generically either way to avoid leaking which emails are registered.
-    if (account && !account.isVerified) {
-      const otp = generateOtp();
-      await setUserOtp(account._id, await hashOtp(otp), otpExpiry());
-      await sendVerificationEmail({ name: account.name, email: account.email }, otp);
+    if (!account || account.isVerified) {
+      return NextResponse.json({
+        success: true,
+        message: "If this account requires verification, a new code can be requested.",
+      });
     }
+
+    if (account.otpLockedUntil && new Date(account.otpLockedUntil).getTime() > Date.now()) {
+      return NextResponse.json(
+        { message: "Too many incorrect attempts. Try again after the 15-minute lock expires." },
+        { status: 429 }
+      );
+    }
+
+    if (account.otpHash && !isOtpExpired(account.otpExpiry)) {
+      return NextResponse.json(
+        { message: "A verification code is already active. Check your email or wait for it to expire." },
+        { status: 429 }
+      );
+    }
+
+    const otp = generateOtp();
+    await setUserOtp(account._id, await hashOtp(otp), otpExpiry());
+    await sendVerificationEmail({ name: account.name, email: account.email }, otp);
 
     return NextResponse.json({
       success: true,
-      message: "If the account exists and is unverified, a new code has been sent.",
+      message: "A new verification code has been sent.",
     });
   } catch (error) {
-    console.log("RESEND-OTP ERROR:", error);
-    return NextResponse.json({ message: "Server error" }, { status: 500 });
+    console.error("RESEND OTP ERROR:", error);
+    return NextResponse.json({ message: "Unable to send verification code" }, { status: 500 });
   }
 }
