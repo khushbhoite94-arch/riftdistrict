@@ -10,14 +10,10 @@ import { useCartStore } from "@/store/cartStore";
 
 export default function Navbar() {
   const user = useAuthStore((s) => s.user);
+  const authLoading = useAuthStore((s) => s.loading);
   const logout = useAuthStore((s) => s.logout);
-  const [hasToken, setHasToken] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
-
-  useEffect(() => {
-    setHasToken(document.cookie.includes("token"));
-  }, []);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -36,7 +32,7 @@ export default function Navbar() {
     };
   }, [mobileOpen]);
 
-  const isLoggedIn = Boolean(user) || hasToken;
+  const isLoggedIn = Boolean(user);
   const { items, openCart } = useCartStore();
   const cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
@@ -68,7 +64,7 @@ export default function Navbar() {
             </Link>
           ))}
 
-          {!isLoggedIn ? (
+          {authLoading ? null : !isLoggedIn ? (
             <>
               <Link href="/login" className="hover:text-orange-500 transition">
                 Login
