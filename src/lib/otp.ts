@@ -1,11 +1,12 @@
 import bcrypt from "bcryptjs";
+import { randomInt } from "crypto";
 
 /** OTP lifetime: 10 minutes, per spec. */
 export const OTP_TTL_MS = 10 * 60 * 1000;
 
 /** Generate a random 4-digit numeric OTP (zero-padded, e.g. "0427"). */
 export function generateOtp(): string {
-  return Math.floor(1000 + Math.random() * 9000).toString();
+  return randomInt(0, 10_000).toString().padStart(4, "0");
 }
 
 /** Hash an OTP before storage (never store the raw code). */
