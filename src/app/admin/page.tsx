@@ -91,11 +91,14 @@ export default function AdminPage() {
 
   const updateOrderStatus = async (orderId: string, status: string) => {
     try {
-      await fetch("/api/admin/orders", {
+      const response = await fetch("/api/admin/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId, status }),
       });
+      if (!response.ok) {
+        throw new Error("Order status update failed");
+      }
       setOrders((prev) =>
         prev.map((o) => (o._id === orderId ? { ...o, status } : o))
       );
