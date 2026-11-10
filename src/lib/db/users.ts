@@ -102,6 +102,20 @@ export async function getAuthByEmail(email: string): Promise<AuthAccount | null>
 }
 
 /** Light contact lookup for transactional emails. */
+
+/** Read the current database role so stale JWT claims cannot preserve admin access. */
+export async function getUserRoleById(
+  userId: string
+): Promise<{ role: string; isVerified: boolean } | null> {
+  await ensureUserAuthColumns();
+  const res = await query<{ role: string; isVerified: boolean }>(
+    `SELECT TOP 1 role, is_verified AS isVerified
+     FROM users WHERE id = @userId`,
+    { userId }
+  );
+  return res.recordset[0] ?? null;
+}
+
 export async function getUserContactById(
   id: string
 ): Promise<{ name: string; email: string } | null> {
