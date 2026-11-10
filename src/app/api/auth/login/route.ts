@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
 
     const tokenId = newRefreshTokenId();
     const refreshToken = signRefreshToken({ userId: user._id, role, tokenId });
-    const refreshExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const refreshExpiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
 
     await createRefreshSession({
       userId: user._id,
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     response.cookies.set(AUTH_COOKIE, token, { ...AUTH_COOKIE_OPTIONS, maxAge: 30 * 24 * 60 * 60 });
     response.cookies.set(REFRESH_COOKIE, refreshToken, {
       ...AUTH_COOKIE_OPTIONS,
-      maxAge: 30 * 24 * 60 * 60,
+      maxAge: 60 * 24 * 60 * 60,
     });
 
     return response;
