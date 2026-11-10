@@ -38,7 +38,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       await fetch("/api/auth/me", {
         method: "DELETE",
         credentials: "include",
-      });
+      }).catch(() => undefined);
     } finally {
       window.location.href = "/";
     }
