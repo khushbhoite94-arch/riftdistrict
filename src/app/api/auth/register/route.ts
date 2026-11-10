@@ -52,8 +52,8 @@ export async function POST(req: NextRequest) {
 
     // Issue a 4-digit verification OTP (hashed at rest, 10-min expiry).
     const otp = generateOtp();
-    await setUserOtp(user._id, await hashOtp(otp), otpExpiry());
     await sendVerificationEmail({ name: user.name, email: user.email }, otp);
+    await setUserOtp(user._id, await hashOtp(otp), otpExpiry());
 
     // No auth cookie: the account stays unverified until the OTP is validated.
     return NextResponse.json(
