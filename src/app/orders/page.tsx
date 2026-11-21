@@ -6,11 +6,12 @@ import { motion } from "framer-motion";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import { Package } from "lucide-react";
+import type { IOrder } from "@/types";
 
 export default function OrdersPage() {
   const router = useRouter();
   const { user, loading } = useAuthStore();
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<IOrder[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
 
   useEffect(() => {
@@ -63,7 +64,7 @@ export default function OrdersPage() {
               >
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <p className="font-mono text-lg font-bold">{(order as any).orderNumber || order._id}</p>
+                    <p className="font-mono text-lg font-bold">{order.orderNumber || order._id}</p>
                     <p className="text-sm text-rift-mist/50 mt-1">
                       {new Date(order.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
                     </p>

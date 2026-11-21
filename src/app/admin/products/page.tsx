@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Search, Plus, Edit, Trash2, X, Upload, Filter } from "lucide-react";
-import { AnimatedButton } from "@/components/ui/AnimatedButton";
 import type { IProduct } from "@/types";
 
 function AdminProductsContent() {
@@ -15,13 +14,10 @@ function AdminProductsContent() {
   const [editingProduct, setEditingProduct] = useState<IProduct | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
   const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const cat = searchParams.get("category");
-    if (cat) setCategoryFilter(cat);
-  }, [searchParams]);
+  const [categoryFilter, setCategoryFilter] = useState(
+    () => searchParams.get("category") ?? ""
+  );
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -39,8 +35,40 @@ function AdminProductsContent() {
   };
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    let cancelled = false;
+
+    const loadProducts = async () => {
+      try {
+        const res = await fetch("/api/admin/products", {
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch products");
+        }
+
+        const data = await res.json();
+
+        if (!cancelled) {
+          setProducts(data.products || []);
+        }
+      } catch {
+        if (!cancelled) {
+          console.error("Failed to fetch products");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadProducts();
+
+    return () => {
+      cancelled = true;
+    };
+        }, []);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this product?")) return;

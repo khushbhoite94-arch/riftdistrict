@@ -1,77 +1,186 @@
+
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { AnimatedButton } from "@/components/ui/AnimatedButton";
-import { PLACEHOLDER_IMAGES, BRAND } from "@/lib/constants";
+import { ArrowDown, ArrowUpRight } from "lucide-react";
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-[calc(100svh-4rem)] sm:min-h-[700px] flex items-center justify-center overflow-hidden px-3 sm:px-0">
-      <div className="absolute inset-0">
+    <section className="relative isolate min-h-[760px] h-[100svh] max-h-[1100px] overflow-hidden bg-black text-white"
+      style={{
+        backgroundImage: `
+          radial-gradient(ellipse at 12% 35%, rgba(125,57,235,0.32) 0%, transparent 48%),
+          radial-gradient(ellipse at 88% 75%, rgba(198,255,51,0.12) 0%, transparent 38%),
+          radial-gradient(ellipse at 55% 5%, rgba(125,57,235,0.17) 0%, transparent 45%),
+          linear-gradient(115deg, #08050e 0%, #080808 55%, #10091b 100%)
+        `,
+      }}
+    >
+
+      {/* Background atmosphere */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute right-[-15%] top-[5%] h-[600px] w-[600px] rounded-full bg-[#7D39EB]/20 blur-[150px]" />
+        <div className="absolute bottom-[-25%] left-[-10%] h-[500px] w-[500px] rounded-full bg-[#7D39EB]/10 blur-[150px]" />
+        <div className="absolute inset-0 opacity-[0.045]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.3) 1px, transparent 1px)",
+            backgroundSize: "70px 70px",
+          }}
+        />
+      </div>
+
+      {/* Hero image */}
+      <motion.div
+        initial={{ opacity: 0, scale: 1.12, x: 50 }}
+        animate={{ opacity: 1, scale: 1, x: 0 }}
+        transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+        className="absolute inset-y-0 right-[-16%] w-[105%] sm:right-[-8%] sm:w-[82%] lg:right-[-3%] lg:w-[66%]"
+      >
         <Image
-          src={PLACEHOLDER_IMAGES.hero}
-          alt="RIFT DISTRICT Hero"
+          src="/products/sweatshirt_3_Gemini_Generated_Image_e8i7ffe8i7ffe8i7.png"
+          alt="RIFT DISTRICT streetwear collection"
           fill
           priority
-          className="object-cover scale-105"
-          sizes="100vw"
+          sizes="(max-width: 768px) 100vw, 70vw"
+          className="object-contain object-center opacity-65 sm:opacity-80"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-rift-base/50 via-rift-base/75 to-rift-base" />
-      </div>
 
-      <div className="relative z-10 text-center px-2 sm:px-6 max-w-5xl mx-auto">
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-          className="text-xs tracking-[0.4em] uppercase text-rift-mist/60 mb-6"
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/30 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/20" />
+      </motion.div>
+
+      {/* Top editorial label */}
+      <div className="absolute left-5 right-5 top-[105px] z-10 flex items-center justify-between sm:left-10 sm:right-10 lg:left-16 lg:right-16">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.5, duration: 0.8 }}
+          className="flex items-center gap-3"
         >
-          SS26 Collection
-        </motion.p>
+          <span className="h-2 w-2 rounded-full bg-[#C6FF33] shadow-[0_0_15px_#C6FF33]" />
+          <span className="text-[9px] font-medium uppercase tracking-[0.3em] text-white/60 sm:text-[10px]">
+            Independent Streetwear Label
+          </span>
+        </motion.div>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-none glow-text"
-        >
-          {BRAND.name}
-        </motion.h1>
-
-        <motion.p
+        <motion.span
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.9 }}
-          className="mt-4 sm:mt-6 text-xs sm:text-sm md:text-base text-rift-mist/60 tracking-[0.15em] uppercase max-w-md mx-auto"
+          transition={{ delay: 0.8 }}
+          className="hidden text-[10px] tracking-[0.25em] text-white/35 sm:block"
         >
-          {BRAND.tagline}
-        </motion.p>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 1.2 }}
-          className="mt-7 sm:mt-10 flex flex-col sm:flex-row gap-2.5 sm:gap-4 justify-center"
-        >
-          <AnimatedButton href="/shop">Shop Now</AnimatedButton>
-          <AnimatedButton href="/collection/limited-drop" variant="outline">
-            New Drop
-          </AnimatedButton>
-        </motion.div>
+          INDIA / EST. 2025
+        </motion.span>
       </div>
 
+      {/* Main typography */}
+      <div className="relative z-10 flex min-h-[760px] h-full items-center px-5 pb-16 pt-40 sm:px-10 lg:px-16">
+        <div className="w-full max-w-[1100px]">
+
+          <motion.p
+            initial={{ opacity: 0, y: 25 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.65, duration: 0.8 }}
+            className="mb-5 text-[10px] font-semibold uppercase tracking-[0.45em] text-[#C6FF33] sm:text-xs"
+          >
+            Chapter 001 — The New Uniform
+          </motion.p>
+
+          <div className="relative">
+            <motion.h1
+              initial={{ opacity: 0, y: 70 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                delay: 0.8,
+                duration: 1.1,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              className="text-[clamp(4.2rem,12vw,10.5rem)] font-black uppercase leading-[0.76] tracking-[-0.085em]"
+            >
+              BREAK
+              <br />
+              THE
+              <br />
+              <span className="text-transparent [-webkit-text-stroke:1.5px_white]">
+                ORDINARY.
+              </span>
+            </motion.h1>
+
+            <motion.div
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ delay: 1.45, duration: 0.8 }}
+              className="mt-7 h-[3px] w-24 origin-left bg-[#7D39EB] sm:mt-9 sm:w-36"
+            />
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 25 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.25, duration: 0.8 }}
+            className="mt-7 max-w-[390px]"
+          >
+            <p className="text-xs leading-7 tracking-[0.08em] text-white/55 sm:text-sm">
+              Not made to fit in. Designed to stand apart.
+              Discover the new expression of RIFT DISTRICT.
+            </p>
+
+            <div className="mt-8 flex flex-wrap items-center gap-3 sm:gap-5">
+              <Link
+                href="/shop"
+                className="group inline-flex h-12 items-center gap-7 bg-[#C6FF33] px-6 text-[10px] font-bold uppercase tracking-[0.2em] text-black transition duration-300 hover:bg-white"
+              >
+                Explore Collection
+                <ArrowUpRight
+                  size={16}
+                  className="transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"
+                />
+              </Link>
+
+              <Link
+                href="/collection/limited-drop"
+                className="group inline-flex h-12 items-center gap-3 border border-white/25 px-5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white transition duration-300 hover:border-[#7D39EB] hover:bg-[#7D39EB]/20"
+              >
+                Limited Drop
+                <span className="text-[#C6FF33]">↗</span>
+              </Link>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Side label */}
+      <div className="absolute bottom-28 right-5 z-10 hidden [writing-mode:vertical-rl] lg:block">
+        <span className="text-[9px] uppercase tracking-[0.4em] text-white/35">
+          RIFT DISTRICT® — BUILT DIFFERENT
+        </span>
+      </div>
+
+      {/* Bottom indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 2 }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2"
+        transition={{ delay: 1.8 }}
+        className="absolute bottom-7 left-5 right-5 z-10 flex items-center justify-between border-t border-white/10 pt-5 sm:left-10 sm:right-10 lg:left-16 lg:right-16"
       >
+        <span className="text-[9px] uppercase tracking-[0.3em] text-white/35">
+          Scroll to discover
+        </span>
+
         <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="w-px h-16 bg-gradient-to-b from-transparent via-rift-orange/60 to-transparent"
-        />
+          animate={{ y: [0, 6, 0] }}
+          transition={{ duration: 1.8, repeat: Infinity }}
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 text-[#C6FF33]"
+        >
+          <ArrowDown size={15} />
+        </motion.div>
+
+        <span className="text-[9px] uppercase tracking-[0.3em] text-white/35">
+          01 / 04
+        </span>
       </motion.div>
     </section>
   );

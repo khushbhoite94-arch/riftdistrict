@@ -1,0 +1,258 @@
+@import "tailwindcss";
+
+/* RIFT DISTRICT — brand palette */
+:root {
+  --rift-base: #1a2730;
+  --rift-surface: #424048;
+  --rift-slate: #45586c;
+  --rift-mist: #b0cee2;
+  --rift-rust: #a63e1b;
+  --rift-orange: #e95d2c;
+
+  --background: var(--rift-base);
+  --foreground: #ffffff;
+  --muted: rgba(176, 206, 226, 0.55);
+  --muted-subtle: rgba(176, 206, 226, 0.35);
+  --border: rgba(176, 206, 226, 0.12);
+  --border-strong: rgba(176, 206, 226, 0.22);
+  --glow-mist: rgba(176, 206, 226, 0.2);
+  --glow-orange: rgba(233, 93, 44, 0.35);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-rift-base: var(--rift-base);
+  --color-rift-surface: var(--rift-surface);
+  --color-rift-slate: var(--rift-slate);
+  --color-rift-mist: var(--rift-mist);
+  --color-rift-rust: var(--rift-rust);
+  --color-rift-orange: var(--rift-orange);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-space);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: auto;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--rift-base);
+  color: var(--foreground);
+  font-family: var(--font-inter), system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(233, 93, 44, 0.35);
+  color: #fff;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+input,
+textarea,
+select,
+button {
+  font: inherit;
+}
+
+@media (max-width: 640px) {
+  body {
+    text-size-adjust: 100%;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--rift-base);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--rift-slate);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--rift-mist);
+}
+
+/* Glass card — standard */
+.glass-card {
+  background: rgba(66, 64, 72, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 0 40px var(--glow-orange), 0 0 80px var(--glow-mist);
+  transform: translateY(-2px);
+}
+
+/* Glass card — strong / elevated */
+.glass-card--strong {
+  background: rgba(69, 88, 108, 0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Glass panel — for sidebars / overlays */
+.glass-panel {
+  background: rgba(26, 39, 48, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+}
+
+/* Glass input */
+.glass-input {
+  background: rgba(26, 39, 48, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+.glass-input:focus {
+  outline: none;
+  border-color: var(--rift-mist);
+  box-shadow: 0 0 0 1px rgba(176, 206, 226, 0.15), 0 0 20px rgba(176, 206, 226, 0.1);
+}
+
+.glass-input::placeholder {
+  color: var(--muted-subtle);
+}
+
+/* Glass button */
+.glass-btn {
+  background: rgba(66, 64, 72, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+.glass-btn:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 0 20px var(--glow-orange);
+}
+
+.glass-btn--primary {
+  background: rgba(233, 93, 44, 0.85);
+  border-color: transparent;
+}
+
+.glass-btn--primary:hover {
+  background: rgba(233, 93, 44, 1);
+  box-shadow: 0 0 30px var(--glow-orange);
+}
+
+/* Glass checkbox / radio */
+.glass-check {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.3rem;
+  background: rgba(26, 39, 48, 0.8);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.glass-check:checked {
+  background: var(--rift-orange);
+  border-color: var(--rift-orange);
+}
+
+.glass-check:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 5px;
+  height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.glow-text {
+  text-shadow: 0 0 60px var(--glow-orange), 0 0 30px var(--glow-mist);
+}
+
+.btn-magnetic {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.page-enter {
+  opacity: 0;
+  filter: blur(8px);
+}
+.page-enter-active {
+  opacity: 1;
+  filter: blur(0);
+  transition: opacity 0.6s ease, filter 0.6s ease;
+}
+
+.input-field {
+  width: 100%;
+  background: rgba(26, 39, 48, 0.9);
+  border: 1px solid var(--border);
+  padding: 0.875rem 1rem;
+  color: #fff;
+  font-size: 0.875rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--rift-mist);
+  box-shadow: 0 0 0 1px rgba(176, 206, 226, 0.15);
+}
+
+.input-field::placeholder {
+  color: var(--muted-subtle);
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Accent badge */
+.badge-limited {
+  background: var(--rift-orange);
+  color: #fff;
+}
+
+.badge-sale {
+  background: var(--rift-rust);
+  color: #fff;
+}
+
+@media (min-width: 1024px) {
+  .custom-cursor-active * {
+    cursor: none !important;
+  }
+}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePersonalizationStore } from "@/store/personalizationStore";
+import type { StylePreferences } from "@/store/personalizationStore";
 import { useRouter } from "next/navigation";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import { usePortal } from "@/hooks/usePortal";
@@ -56,7 +57,7 @@ export function StyleQuiz() {
   const { hasCompletedQuiz, setPreferences, completeQuiz } = usePersonalizationStore();
   const [isOpen, setIsOpen] = useState(!hasCompletedQuiz);
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, any>>({
+  const [answers, setAnswers] = useState<Record<string, unknown>>({
     colors: [],
   });
 
@@ -82,7 +83,7 @@ export function StyleQuiz() {
 
   const handleNext = () => {
     if (isLastStep) {
-      setPreferences(answers as any);
+      setPreferences(answers as unknown as StylePreferences);
       completeQuiz();
       setIsOpen(false);
       router.push("/shop");

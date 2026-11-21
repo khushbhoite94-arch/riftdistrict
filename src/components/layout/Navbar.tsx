@@ -58,7 +58,7 @@ export default function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className="hover:text-orange-500 transition"
+              className="hover:text-rift-lime transition"
             >
               {link.label}
             </Link>
@@ -66,24 +66,24 @@ export default function Navbar() {
 
           {authLoading ? null : !isLoggedIn ? (
             <>
-              <Link href="/login" className="hover:text-orange-500 transition">
+              <Link href="/login" className="hover:text-rift-lime transition">
                 Login
               </Link>
               <Link
                 href="/signup"
-                className="border border-orange-500 text-orange-500 px-5 py-2 rounded-full hover:bg-orange-500 hover:text-white transition"
+                className="border border-rift-lime text-rift-lime px-5 py-2 rounded-full hover:bg-rift-lime hover:text-black transition"
               >
                 Signup
               </Link>
             </>
           ) : (
             <>
-              <Link href="/profile" className="hover:text-orange-500 transition">
+              <Link href="/profile" className="hover:text-rift-lime transition">
                 Profile
               </Link>
               <button
                 onClick={logout}
-                className="text-orange-500 hover:opacity-80 transition"
+                className="text-rift-lime hover:opacity-80 transition"
               >
                 Logout
               </button>
@@ -95,11 +95,11 @@ export default function Navbar() {
         <button
           onClick={openCart}
           aria-label="Open cart"
-          className="relative flex items-center justify-center w-10 h-10 text-white hover:text-orange-500 transition"
+          className="relative flex items-center justify-center w-10 h-10 text-white hover:text-rift-lime transition"
         >
           <ShoppingBag size={20} />
           {cartCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-rift-lime text-black text-[10px] font-bold rounded-full flex items-center justify-center">
               {cartCount > 9 ? "9+" : cartCount}
             </span>
           )}
@@ -110,7 +110,7 @@ export default function Navbar() {
           onClick={() => setMobileOpen((v) => !v)}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileOpen}
-          className="md:hidden flex items-center justify-center w-11 h-11 -mr-2 text-white hover:text-orange-500 transition"
+          className="md:hidden flex items-center justify-center w-11 h-11 -mr-2 text-white hover:text-rift-lime transition"
         >
           {mobileOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -141,7 +141,7 @@ export default function Navbar() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setMobileOpen(false)}
-                    className="px-6 py-4 text-sm uppercase tracking-[0.15em] text-white hover:text-orange-500 hover:bg-white/5 transition"
+                    className="px-6 py-4 text-sm uppercase tracking-[0.15em] text-white hover:text-rift-lime hover:bg-white/5 transition"
                   >
                     {link.label}
                   </Link>
@@ -161,7 +161,7 @@ export default function Navbar() {
                     <Link
                       href="/signup"
                       onClick={() => setMobileOpen(false)}
-                      className="w-full text-center py-3.5 text-sm uppercase tracking-[0.15em] border border-orange-500 text-orange-500 rounded-full hover:bg-orange-500 hover:text-white transition"
+                      className="w-full text-center py-3.5 text-sm uppercase tracking-[0.15em] border border-rift-lime text-rift-lime rounded-full hover:bg-rift-lime hover:text-black transition"
                     >
                       Signup
                     </Link>
@@ -171,7 +171,7 @@ export default function Navbar() {
                     <Link
                       href="/profile"
                       onClick={() => setMobileOpen(false)}
-                      className="py-4 text-sm uppercase tracking-[0.15em] text-white hover:text-orange-500 transition"
+                      className="py-4 text-sm uppercase tracking-[0.15em] text-white hover:text-rift-lime transition"
                     >
                       Profile
                     </Link>
@@ -180,7 +180,7 @@ export default function Navbar() {
                         logout();
                         setMobileOpen(false);
                       }}
-                      className="py-4 text-left text-sm uppercase tracking-[0.15em] text-orange-500 hover:opacity-80 transition"
+                      className="py-4 text-left text-sm uppercase tracking-[0.15em] text-rift-lime hover:opacity-80 transition"
                     >
                       Logout
                     </button>

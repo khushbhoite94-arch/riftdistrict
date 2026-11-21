@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { ArrowLeft, CheckCircle, XCircle, Calendar, Package, PackageCheck, User, Mail } from "lucide-react";
 import type { IReplacementRequest } from "@/types/replacement";
 
@@ -14,7 +14,7 @@ export default function AdminReplacementDetailPage() {
   const [replacement, setReplacement] = useState<IReplacementRequest & { userName?: string; userEmail?: string; orderNumber?: string } | null>(null);
   const [fetching, setFetching] = useState(true);
   const [adminNotes, setAdminNotes] = useState("");
-  const [deliveryDate, setDeliveryDate] = useState("");
+  const deliveryDate = "";
   const [processingAction, setProcessingAction] = useState("");
 
   useEffect(() => {

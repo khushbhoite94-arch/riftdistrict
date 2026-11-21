@@ -7,7 +7,7 @@ interface User {
   role?: string;
   phone?: string;
   address?: string;
-  wishlist?: any[];
+  wishlist?: string[];
 }
 
 interface AuthState {

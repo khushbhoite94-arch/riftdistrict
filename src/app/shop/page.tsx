@@ -24,7 +24,7 @@ function ShopContent() {
     try {
       const res = await fetch(`/api/admin/banners`);
       const data = await res.json();
-      setBanners((data?.banners || []).map((b: any) => b.image).filter(Boolean));
+      setBanners((data?.banners || []).map((b: { image?: string }) => b.image).filter(Boolean));
     } catch {
       setBanners([]);
     }

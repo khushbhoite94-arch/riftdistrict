@@ -10,7 +10,8 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open [http://localhost:3000](http://localhost:3000)cat src/lib/sql.ts
+
 
 ## Environment
 

@@ -1,10 +1,12 @@
+
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Clock, CheckCircle2, XCircle, ArrowDownCircle,
-  ArrowUpCircle, Calendar, TrendingUp, Wallet, RefreshCw
+  Clock,
+  CheckCircle2,
+  RefreshCw,
 } from "lucide-react";
 
 interface LoyaltyTransaction {
@@ -32,37 +34,86 @@ export default function AdminLoyaltyPage() {
   const [processing, setProcessing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
+
     try {
       const [pendingRes, eligibleRes] = await Promise.all([
         fetch("/api/admin/loyalty?type=pending"),
         fetch("/api/admin/loyalty?type=eligible"),
       ]);
+
+      if (!pendingRes.ok || !eligibleRes.ok) {
+        throw new Error("Failed to load loyalty transactions");
+      }
+
       const pendingData = await pendingRes.json();
       const eligibleData = await eligibleRes.json();
+
       setPending(pendingData.pending || []);
       setEligible(eligibleData.eligible || []);
     } catch {
-      // ignore
+      setMessage("Failed to load loyalty transactions");
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+  let cancelled = false;
+
+  const loadData = async () => {
+    try {
+      const [pendingRes, eligibleRes] = await Promise.all([
+        fetch("/api/admin/loyalty?type=pending"),
+        fetch("/api/admin/loyalty?type=eligible"),
+      ]);
+
+      if (!pendingRes.ok || !eligibleRes.ok) {
+        throw new Error("Failed to load loyalty transactions");
+      }
+
+      const [pendingData, eligibleData] = await Promise.all([
+        pendingRes.json(),
+        eligibleRes.json(),
+      ]);
+
+      if (!cancelled) {
+        setPending(pendingData.pending || []);
+        setEligible(eligibleData.eligible || []);
+      }
+    } catch {
+      if (!cancelled) {
+        setMessage("Failed to load loyalty transactions");
+      }
+    } finally {
+      if (!cancelled) {
+        setLoading(false);
+      }
+    }
   };
+
+  void loadData();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);     
 
   const processCredits = async () => {
     setProcessing(true);
     setMessage(null);
+
     try {
-      const res = await fetch("/api/admin/loyalty/process", { method: "POST" });
+      const res = await fetch("/api/admin/loyalty/process", {
+        method: "POST",
+      });
+
       const data = await res.json();
+
       if (res.ok) {
         setMessage(data.message || "Credits processed successfully");
-        fetchData();
+        await fetchData();
       } else {
         setMessage(data.error || "Failed to process credits");
       }
@@ -82,8 +133,7 @@ export default function AdminLoyaltyPage() {
   };
 
   const getEstimatedCreditDate = (orderCreatedAt: string) => {
-    const created = new Date(orderCreatedAt);
-    const estimated = new Date(created);
+    const estimated = new Date(orderCreatedAt);
     estimated.setDate(estimated.getDate() + 7);
     return formatDate(estimated.toISOString());
   };
@@ -91,9 +141,16 @@ export default function AdminLoyaltyPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold tracking-tight">Loyalty Management</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          Loyalty Management
+        </h1>
         <div className="glass-card--strong rounded-2xl p-8 space-y-4">
-          {[1, 2, 3].map((i) => <div key={i} className="h-16 bg-rift-surface/60 rounded-xl animate-pulse" />)}
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-16 bg-rift-surface/60 rounded-xl animate-pulse"
+            />
+          ))}
         </div>
       </div>
     );
@@ -103,11 +160,14 @@ export default function AdminLoyaltyPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Loyalty Management</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Loyalty Management
+          </h1>
           <p className="text-sm text-rift-mist/50 mt-1">
             {pending.length} pending · {eligible.length} eligible for crediting
           </p>
         </div>
+
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -115,7 +175,10 @@ export default function AdminLoyaltyPage() {
           disabled={processing || eligible.length === 0}
           className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-rift-orange to-rift-rust text-white text-xs tracking-wider uppercase rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <RefreshCw size={14} className={processing ? "animate-spin" : ""} />
+          <RefreshCw
+            size={14}
+            className={processing ? "animate-spin" : ""}
+          />
           {processing ? "Processing..." : "Process Eligible Credits"}
         </motion.button>
       </div>
@@ -126,7 +189,6 @@ export default function AdminLoyaltyPage() {
         </div>
       )}
 
-      {/* ─── Eligible for Credit ─── */}
       <div className="glass-card--strong rounded-2xl overflow-hidden">
         <div className="p-6 border-b border-rift-mist/10">
           <div className="flex items-center gap-3">
@@ -157,7 +219,10 @@ export default function AdminLoyaltyPage() {
               </thead>
               <tbody>
                 {eligible.map((txn) => (
-                  <tr key={txn._id} className="border-b border-rift-mist/5 last:border-0 hover:bg-white/[0.02] transition-colors">
+                  <tr
+                    key={txn._id}
+                    className="border-b border-rift-mist/5 last:border-0 hover:bg-white/[0.02] transition-colors"
+                  >
                     <td className="py-3.5 px-6">
                       <span className="font-mono text-[0.7rem] text-rift-mist/80">
                         {txn.orderNumber || String(txn.orderId)?.slice(-8)}
@@ -186,7 +251,6 @@ export default function AdminLoyaltyPage() {
         )}
       </div>
 
-      {/* ─── All Pending ─── */}
       <div className="glass-card--strong rounded-2xl overflow-hidden">
         <div className="p-6 border-b border-rift-mist/10">
           <div className="flex items-center gap-3">
@@ -215,7 +279,10 @@ export default function AdminLoyaltyPage() {
               </thead>
               <tbody>
                 {pending.map((txn) => (
-                  <tr key={txn._id} className="border-b border-rift-mist/5 last:border-0 hover:bg-white/[0.02] transition-colors">
+                  <tr
+                    key={txn._id}
+                    className="border-b border-rift-mist/5 last:border-0 hover:bg-white/[0.02] transition-colors"
+                  >
                     <td className="py-3.5 px-6">
                       <span className="font-mono text-[0.7rem] text-rift-mist/80">
                         {txn.orderNumber || String(txn.orderId)?.slice(-8)}

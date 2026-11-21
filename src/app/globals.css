@@ -1,22 +1,26 @@
 @import "tailwindcss";
 
-/* RIFT DISTRICT — brand palette */
+/* RIFT DISTRICT — BLACK / VIOLET / LIME / WHITE */
 :root {
-  --rift-base: #1a2730;
-  --rift-surface: #424048;
-  --rift-slate: #45586c;
-  --rift-mist: #b0cee2;
-  --rift-rust: #a63e1b;
-  --rift-orange: #e95d2c;
+  --rift-base: #050506;
+  --rift-surface: #111014;
+  --rift-slate: #211a2c;
+  --rift-mist: #f4f1fa;
+  --rift-rust: #5b25b5;
+  --rift-orange: #7D39EB;
+  --rift-violet: #7D39EB;
+  --rift-lime: #C6FF33;
 
-  --background: var(--rift-base);
+  --background: #050506;
   --foreground: #ffffff;
-  --muted: rgba(176, 206, 226, 0.55);
-  --muted-subtle: rgba(176, 206, 226, 0.35);
-  --border: rgba(176, 206, 226, 0.12);
-  --border-strong: rgba(176, 206, 226, 0.22);
-  --glow-mist: rgba(176, 206, 226, 0.2);
-  --glow-orange: rgba(233, 93, 44, 0.35);
+  --muted: rgba(255,255,255,.58);
+  --muted-subtle: rgba(255,255,255,.34);
+  --border: rgba(255,255,255,.12);
+  --border-strong: rgba(198,255,51,.28);
+  --glow-mist: rgba(255,255,255,.08);
+  --glow-orange: rgba(125,57,235,.42);
+  --glow-violet: rgba(125,57,235,.4);
+  --glow-lime: rgba(198,255,51,.22);
 }
 
 @theme inline {
@@ -28,160 +32,124 @@
   --color-rift-mist: var(--rift-mist);
   --color-rift-rust: var(--rift-rust);
   --color-rift-orange: var(--rift-orange);
+  --color-rift-violet: var(--rift-violet);
+  --color-rift-lime: var(--rift-lime);
   --font-sans: var(--font-inter);
   --font-display: var(--font-space);
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 html {
-  scroll-behavior: auto;
+  scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  background: #050506;
 }
 
 body {
-  background: var(--rift-base);
+  background:
+    radial-gradient(ellipse at 5% 15%, rgba(125,57,235,.12), transparent 38%),
+    radial-gradient(ellipse at 95% 65%, rgba(198,255,51,.045), transparent 32%),
+    #050506;
   color: var(--foreground);
   font-family: var(--font-inter), system-ui, sans-serif;
   overflow-x: hidden;
 }
 
 ::selection {
-  background: rgba(233, 93, 44, 0.35);
-  color: #fff;
+  background: rgba(125,57,235,.65);
+  color: white;
 }
 
-img {
-  display: block;
-  max-width: 100%;
-  height: auto;
-}
+img { display: block; max-width: 100%; height: auto; }
+input, textarea, select, button { font: inherit; }
 
-input,
-textarea,
-select,
-button {
-  font: inherit;
-}
-
-@media (max-width: 640px) {
-  body {
-    text-size-adjust: 100%;
-  }
-}
-
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: var(--rift-base);
-}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #050506; }
 ::-webkit-scrollbar-thumb {
-  background: var(--rift-slate);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--rift-mist);
+  background: linear-gradient(180deg, #7D39EB, #C6FF33);
+  border-radius: 10px;
 }
 
-/* Glass card — standard */
 .glass-card {
-  background: rgba(66, 64, 72, 0.55);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.glass-card:hover {
-  border-color: var(--border-strong);
-  box-shadow: 0 0 40px var(--glow-orange), 0 0 80px var(--glow-mist);
-  transform: translateY(-2px);
-}
-
-/* Glass card — strong / elevated */
-.glass-card--strong {
-  background: rgba(69, 88, 108, 0.45);
+  background: rgba(17,16,20,.68);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-strong);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255,255,255,.1);
+  transition: all .4s cubic-bezier(.16,1,.3,1);
+}
+.glass-card:hover {
+  border-color: rgba(198,255,51,.35);
+  box-shadow: 0 0 30px rgba(125,57,235,.18), 0 0 55px rgba(198,255,51,.06);
+  transform: translateY(-3px);
 }
 
-/* Glass panel — for sidebars / overlays */
+.glass-card--strong {
+  background: rgba(15,13,20,.82);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 12px 45px rgba(0,0,0,.42), 0 0 35px rgba(125,57,235,.1);
+}
+
 .glass-panel {
-  background: rgba(26, 39, 48, 0.75);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
+  background: rgba(8,7,12,.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(125,57,235,.25);
+  box-shadow: 0 15px 60px rgba(0,0,0,.55);
 }
 
-/* Glass input */
 .glass-input {
-  background: rgba(26, 39, 48, 0.85);
+  background: rgba(10,9,14,.88);
   backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   border: 1px solid var(--border);
   color: #fff;
-  transition: all 0.3s ease;
+  transition: all .3s ease;
 }
-
 .glass-input:focus {
   outline: none;
-  border-color: var(--rift-mist);
-  box-shadow: 0 0 0 1px rgba(176, 206, 226, 0.15), 0 0 20px rgba(176, 206, 226, 0.1);
+  border-color: var(--rift-violet);
+  box-shadow: 0 0 0 1px rgba(125,57,235,.35), 0 0 24px rgba(125,57,235,.2);
 }
+.glass-input::placeholder { color: var(--muted-subtle); }
 
-.glass-input::placeholder {
-  color: var(--muted-subtle);
-}
-
-/* Glass button */
 .glass-btn {
-  background: rgba(66, 64, 72, 0.55);
+  background: rgba(17,16,20,.7);
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border);
-  color: #fff;
-  transition: all 0.3s ease;
+  color: white;
+  transition: all .3s ease;
 }
-
 .glass-btn:hover {
-  border-color: var(--border-strong);
-  box-shadow: 0 0 20px var(--glow-orange);
+  border-color: var(--rift-lime);
+  box-shadow: 0 0 22px var(--glow-violet);
 }
-
 .glass-btn--primary {
-  background: rgba(233, 93, 44, 0.85);
-  border-color: transparent;
+  background: var(--rift-lime);
+  border-color: var(--rift-lime);
+  color: #050506;
 }
-
 .glass-btn--primary:hover {
-  background: rgba(233, 93, 44, 1);
-  box-shadow: 0 0 30px var(--glow-orange);
+  background: #d6ff65;
+  box-shadow: 0 0 30px var(--glow-lime);
 }
 
-/* Glass checkbox / radio */
 .glass-check {
   appearance: none;
-  -webkit-appearance: none;
   width: 1.1rem;
   height: 1.1rem;
   border: 1px solid var(--border-strong);
-  border-radius: 0.3rem;
-  background: rgba(26, 39, 48, 0.8);
+  border-radius: .3rem;
+  background: #111014;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all .2s ease;
   position: relative;
 }
-
 .glass-check:checked {
-  background: var(--rift-orange);
-  border-color: var(--rift-orange);
+  background: var(--rift-lime);
+  border-color: var(--rift-lime);
 }
-
 .glass-check:checked::after {
   content: "";
   position: absolute;
@@ -189,70 +157,68 @@ button {
   top: 1px;
   width: 5px;
   height: 10px;
-  border: solid #fff;
+  border: solid #050506;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
 
 .glow-text {
-  text-shadow: 0 0 60px var(--glow-orange), 0 0 30px var(--glow-mist);
+  text-shadow: 0 0 35px rgba(125,57,235,.5), 0 0 65px rgba(198,255,51,.12);
 }
+.btn-magnetic { transition: transform .3s cubic-bezier(.16,1,.3,1); }
 
-.btn-magnetic {
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.page-enter {
-  opacity: 0;
-  filter: blur(8px);
-}
+.page-enter { opacity: 0; filter: blur(8px); }
 .page-enter-active {
   opacity: 1;
   filter: blur(0);
-  transition: opacity 0.6s ease, filter 0.6s ease;
+  transition: opacity .6s ease, filter .6s ease;
 }
 
 .input-field {
   width: 100%;
-  background: rgba(26, 39, 48, 0.9);
+  background: rgba(10,9,14,.9);
   border: 1px solid var(--border);
-  padding: 0.875rem 1rem;
-  color: #fff;
-  font-size: 0.875rem;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  padding: .875rem 1rem;
+  color: white;
+  font-size: .875rem;
+  transition: border-color .3s ease, box-shadow .3s ease;
 }
-
 .input-field:focus {
   outline: none;
-  border-color: var(--rift-mist);
-  box-shadow: 0 0 0 1px rgba(176, 206, 226, 0.15);
+  border-color: var(--rift-violet);
+  box-shadow: 0 0 0 1px rgba(125,57,235,.35), 0 0 20px rgba(125,57,235,.16);
+}
+.input-field::placeholder { color: var(--muted-subtle); }
+
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+
+.badge-limited { background: var(--rift-violet); color: white; }
+.badge-sale { background: var(--rift-lime); color: #050506; }
+
+.rift-glow {
+  box-shadow: 0 0 20px rgba(125,57,235,.35), 0 0 55px rgba(125,57,235,.12);
+}
+.rift-lime-glow {
+  box-shadow: 0 0 20px rgba(198,255,51,.3), 0 0 50px rgba(198,255,51,.1);
+}
+.rift-ambient {
+  animation: riftAmbient 12s ease-in-out infinite alternate;
+}
+@keyframes riftAmbient {
+  from { opacity: .55; transform: scale(1); }
+  to { opacity: 1; transform: scale(1.08); }
 }
 
-.input-field::placeholder {
-  color: var(--muted-subtle);
-}
-
-.hide-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-/* Accent badge */
-.badge-limited {
-  background: var(--rift-orange);
-  color: #fff;
-}
-
-.badge-sale {
-  background: var(--rift-rust);
-  color: #fff;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
 }
 
 @media (min-width: 1024px) {
-  .custom-cursor-active * {
-    cursor: none !important;
-  }
+  .custom-cursor-active * { cursor: none !important; }
 }

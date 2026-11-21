@@ -2,15 +2,19 @@
 
 import { usePersonalizationStore } from "@/store/personalizationStore";
 import { ProductCard } from "@/components/shop/ProductCard";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import type { IProduct } from "@/types";
 
 export function RecentlyViewed() {
   const { recentlyViewed } = usePersonalizationStore();
   const [products, setProducts] = useState<IProduct[]>([]);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     if (recentlyViewed.length === 0) return;
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
     const mapped = recentlyViewed.map((rv) => ({
       _id: rv.productId,
       slug: rv.slug,

@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/api-helpers";
 import { jsonResponse, errorResponse } from "@/lib/api-helpers";
 import { query } from "@/lib/sql";
+import type { OrderStatus } from "@/types";
 import {
   listAllOrders,
   getOrderByNumber,
@@ -69,7 +70,7 @@ export async function PATCH(req: NextRequest) {
 
     const order = await updateOrderStatus(
       orderId,
-      status,
+      status as OrderStatus,
       typeof trackingNumber === "string" ? trackingNumber : undefined
     );
     if (!order) return errorResponse("Order not found", 404);

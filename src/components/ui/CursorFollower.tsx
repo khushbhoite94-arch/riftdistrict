@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
 
 export function CursorFollower() {
@@ -8,17 +8,24 @@ export function CursorFollower() {
   const [hovering, setHovering] = useState(false);
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
+  const mountedRef = useRef(false);
 
   const springConfig = { damping: 25, stiffness: 200 };
   const x = useSpring(cursorX, springConfig);
   const y = useSpring(cursorY, springConfig);
 
   useEffect(() => {
+    mountedRef.current = true;
     const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
-    if (!isDesktop) return;
+    if (!isDesktop) {
+      mountedRef.current = false;
+      return;
+    }
 
     document.body.classList.add("custom-cursor-active");
-    setVisible(true);
+    requestAnimationFrame(() => {
+      if (mountedRef.current) setVisible(true);
+    });
 
     const move = (e: MouseEvent) => {
       cursorX.set(e.clientX);
@@ -37,6 +44,7 @@ export function CursorFollower() {
     });
 
     return () => {
+      mountedRef.current = false;
       document.body.classList.remove("custom-cursor-active");
       window.removeEventListener("mousemove", move);
       interactives.forEach((el) => {

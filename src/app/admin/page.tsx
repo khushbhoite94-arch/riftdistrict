@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -19,13 +20,45 @@ import {
   Users,
   TrendingUp,
   Search,
-  Eye,
   MoreVertical,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { formatPrice } from "@/lib/utils";
 
-type GenericObject = Record<string, unknown>;
+type AdminUser = {
+  role?: string;
+};
+
+type OrderCustomer = {
+  name?: string;
+  email?: string;
+};
+
+type AdminOrder = {
+  _id: string;
+  orderNumber?: string;
+  userId?: string | OrderCustomer | null;
+  total?: number;
+  status: string;
+  createdAt?: string;
+};
+
+type AnalyticsStats = {
+  revenueByMonth?: Record<string, number>;
+  totalRevenue?: number;
+  totalOrders?: number;
+  totalProducts?: number;
+  totalCustomers?: number;
+  subscribers?: number;
+};
+
+type AnalyticsResponse = {
+  stats?: AnalyticsStats;
+};
+
+type OrdersResponse = {
+  orders?: AdminOrder[];
+};
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "bg-amber-500/10 text-amber-400 border-amber-500/20",
@@ -45,41 +78,86 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "Cancelled",
 };
 
-const STATUS_OPTIONS = ["pending", "processing", "shipped", "in-orbit", "delivered", "cancelled"];
+const STATUS_OPTIONS = [
+  "pending",
+  "processing",
+  "shipped",
+  "in-orbit",
+  "delivered",
+  "cancelled",
+];
 
 export default function AdminPage() {
   const router = useRouter();
   const { user, loading } = useAuthStore();
-  const [analytics, setAnalytics] = useState<GenericObject | null>(null);
-  const [orders, setOrders] = useState<GenericObject[]>([]);
+
+  const adminUser = user as AdminUser | null;
+  const isAdmin = adminUser?.role === "admin";
+
+  const [analytics, setAnalytics] = useState<AnalyticsResponse | null>(null);
+  const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [orderSearch, setOrderSearch] = useState("");
 
   useEffect(() => {
-    if (!loading && user) {
-      if ((user as any).role !== "admin") router.push("/");
-    } else if (!loading && !user) {
+    if (loading) return;
+
+    if (!user) {
       router.push("/login?redirect=/admin");
+      return;
     }
-  }, [user, loading, router]);
+
+    if (!isAdmin) {
+      router.push("/");
+    }
+  }, [user, loading, isAdmin, router]);
 
   useEffect(() => {
-    if ((user as any)?.role === "admin") {
-      fetch("/api/admin/analytics")
-        .then((r) => r.json())
-        .then(setAnalytics)
-        .catch(() => {});
-      fetch("/api/admin/orders")
-        .then((r) => r.json())
-        .then((d) => setOrders(d.orders || []))
-        .catch(() => {});
-    }
-  }, [user]);
+    if (!isAdmin) return;
 
-  const stats = (analytics as { stats?: Record<string, unknown> })?.stats;
+    let cancelled = false;
+
+    async function loadDashboard() {
+      try {
+        const [analyticsResponse, ordersResponse] = await Promise.all([
+          fetch("/api/admin/analytics"),
+          fetch("/api/admin/orders"),
+        ]);
+
+        if (!analyticsResponse.ok || !ordersResponse.ok) {
+          throw new Error("Failed to load dashboard data");
+        }
+
+        const analyticsData =
+          (await analyticsResponse.json()) as AnalyticsResponse;
+        const ordersData =
+          (await ordersResponse.json()) as OrdersResponse;
+
+        if (!cancelled) {
+          setAnalytics(analyticsData);
+          setOrders(ordersData.orders ?? []);
+        }
+      } catch {
+        if (!cancelled) {
+          setAnalytics(null);
+          setOrders([]);
+        }
+      }
+    }
+
+    void loadDashboard();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin]);
+
+  const stats = analytics?.stats;
 
   const revenueData = useMemo(() => {
-    const revenueByMonth = stats?.revenueByMonth as Record<string, number> | undefined;
+    const revenueByMonth = stats?.revenueByMonth;
+
     if (!revenueByMonth) return [];
+
     return Object.entries(revenueByMonth).map(([month, value]) => ({
       month,
       revenue: value,
@@ -94,25 +172,31 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId, status }),
       });
+
       if (!response.ok) {
         throw new Error("Order status update failed");
       }
-      setOrders((prev) =>
-        prev.map((o) => (o._id === orderId ? { ...o, status } : o))
+
+      setOrders((previousOrders) =>
+        previousOrders.map((order) =>
+          order._id === orderId ? { ...order, status } : order
+        )
       );
     } catch {
       alert("Failed to update order");
     }
   };
 
-  if (loading || !user || (user as any).role !== "admin") {
+  if (loading || !user || !isAdmin) {
     return <div className="pt-32 min-h-screen" />;
   }
 
   const kpiCards = [
     {
       label: "Revenue",
-      value: stats?.totalRevenue ? formatPrice(stats.totalRevenue as number) : "₹0",
+      value: stats?.totalRevenue
+        ? formatPrice(stats.totalRevenue)
+        : "₹0",
       icon: DollarSign,
       color: "from-rift-orange to-rift-rust",
     },
@@ -142,8 +226,10 @@ export default function AdminPage() {
     },
   ];
 
-  const filteredOrders = orders.filter((o) =>
-    String(o.orderNumber || "").toLowerCase().includes(orderSearch.toLowerCase())
+  const filteredOrders = orders.filter((order) =>
+    (order.orderNumber ?? "")
+      .toLowerCase()
+      .includes(orderSearch.toLowerCase())
   );
 
   return (
@@ -151,31 +237,40 @@ export default function AdminPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-rift-mist/50 mt-1">Welcome back. Here&apos;s what&apos;s happening.</p>
+        <p className="text-sm text-rift-mist/50 mt-1">
+          Welcome back. Here&apos;s what&apos;s happening.
+        </p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {kpiCards.map((kpi, i) => {
+        {kpiCards.map((kpi, index) => {
           const Icon = kpi.icon;
+
           return (
             <motion.div
               key={kpi.label}
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.04 }}
+              transition={{ delay: index * 0.04 }}
               className="glass-card--strong p-5 rounded-2xl"
             >
               <div className="flex items-start justify-between mb-3">
-                <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${kpi.color} flex items-center justify-center`}>
+                <div
+                  className={`w-9 h-9 rounded-xl bg-gradient-to-br ${kpi.color} flex items-center justify-center`}
+                >
                   <Icon className="w-4 h-4 text-white" />
                 </div>
                 <span className="text-[0.6rem] text-rift-mist/35 uppercase tracking-wider">
                   Current
                 </span>
               </div>
-              <p className="text-xl font-semibold tracking-tight">{kpi.value}</p>
-              <p className="text-[0.65rem] text-rift-mist/50 mt-0.5">{kpi.label}</p>
+              <p className="text-xl font-semibold tracking-tight">
+                {kpi.value}
+              </p>
+              <p className="text-[0.65rem] text-rift-mist/50 mt-0.5">
+                {kpi.label}
+              </p>
             </motion.div>
           );
         })}
@@ -192,34 +287,62 @@ export default function AdminPage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-sm font-medium">Revenue</h3>
-              <p className="text-[0.65rem] text-rift-mist/50 mt-0.5">Monthly overview</p>
+              <p className="text-[0.65rem] text-rift-mist/50 mt-0.5">
+                Monthly overview
+              </p>
             </div>
-            <button className="p-2 rounded-lg hover:bg-white/5 transition-colors">
+            <button
+              type="button"
+              aria-label="Revenue chart options"
+              className="p-2 rounded-lg hover:bg-white/5 transition-colors"
+            >
               <MoreVertical className="w-4 h-4 text-rift-mist/50" />
             </button>
           </div>
+
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={revenueData}>
                 <defs>
-                  <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#e95d2c" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#e95d2c" stopOpacity={0} />
+                  <linearGradient
+                    id="revGrad"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="5%"
+                      stopColor="#e95d2c"
+                      stopOpacity={0.25}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="#e95d2c"
+                      stopOpacity={0}
+                    />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="rgba(255,255,255,0.04)"
+                />
+
                 <XAxis
                   dataKey="month"
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: "#8888a0", fontSize: 11 }}
                 />
+
                 <YAxis
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: "#8888a0", fontSize: 11 }}
-                  tickFormatter={(v) => `₹${v / 1000}k`}
+                  tickFormatter={(value: number) => `₹${value / 1000}k`}
                 />
+
                 <Tooltip
                   contentStyle={{
                     background: "rgba(14,14,20,0.95)",
@@ -228,9 +351,19 @@ export default function AdminPage() {
                     boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
                   }}
                   labelStyle={{ color: "#b8b8c0", fontSize: 11 }}
-                  formatter={(value: any) => [formatPrice(value), "Revenue"]}
+                  formatter={(value) => [
+                    formatPrice(Number(value ?? 0)),
+                    "Revenue",
+                  ]}
                 />
-                <Area type="monotone" dataKey="revenue" stroke="#e95d2c" strokeWidth={2} fill="url(#revGrad)" />
+
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#e95d2c"
+                  strokeWidth={2}
+                  fill="url(#revGrad)"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -248,15 +381,18 @@ export default function AdminPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h3 className="text-sm font-medium">Recent Orders</h3>
-              <p className="text-[0.65rem] text-rift-mist/50 mt-0.5">Latest transactions</p>
+              <p className="text-[0.65rem] text-rift-mist/50 mt-0.5">
+                Latest transactions
+              </p>
             </div>
+
             <div className="relative w-full sm:w-auto">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-rift-mist/40" />
               <input
                 type="text"
                 placeholder="Search..."
                 value={orderSearch}
-                onChange={(e) => setOrderSearch(e.target.value)}
+                onChange={(event) => setOrderSearch(event.target.value)}
                 className="pl-9 pr-4 py-2 bg-rift-surface/50 border border-rift-mist/10 rounded-lg text-xs text-white placeholder:text-rift-mist/30 focus:outline-none focus:border-rift-orange/30 w-full sm:w-44"
               />
             </div>
@@ -267,59 +403,98 @@ export default function AdminPage() {
           <table className="w-full min-w-[640px]">
             <thead>
               <tr className="border-b border-rift-mist/10">
-                <th className="text-left py-3 px-6 text-[0.6rem] tracking-wider uppercase text-rift-mist/50 font-medium">Order ID</th>
-                <th className="text-left py-3 px-6 text-[0.6rem] tracking-wider uppercase text-rift-mist/50 font-medium">Customer</th>
-                <th className="text-left py-3 px-6 text-[0.6rem] tracking-wider uppercase text-rift-mist/50 font-medium">Amount</th>
-                <th className="text-left py-3 px-6 text-[0.6rem] tracking-wider uppercase text-rift-mist/50 font-medium">Status</th>
-                <th className="text-left py-3 px-6 text-[0.6rem] tracking-wider uppercase text-rift-mist/50 font-medium">Date</th>
+                <th className="text-left py-3 px-6 text-[0.6rem] tracking-wider uppercase text-rift-mist/50 font-medium">
+                  Order ID
+                </th>
+                <th className="text-left py-3 px-6 text-[0.6rem] tracking-wider uppercase text-rift-mist/50 font-medium">
+                  Customer
+                </th>
+                <th className="text-left py-3 px-6 text-[0.6rem] tracking-wider uppercase text-rift-mist/50 font-medium">
+                  Amount
+                </th>
+                <th className="text-left py-3 px-6 text-[0.6rem] tracking-wider uppercase text-rift-mist/50 font-medium">
+                  Status
+                </th>
+                <th className="text-left py-3 px-6 text-[0.6rem] tracking-wider uppercase text-rift-mist/50 font-medium">
+                  Date
+                </th>
               </tr>
             </thead>
+
             <tbody>
-              {filteredOrders.slice(0, 10).map((order) => (
-                <tr key={order._id as string} className="border-b border-rift-mist/5 last:border-0 hover:bg-white/[0.02] transition-colors">
-                  <td className="py-3 px-6">
-                    <span className="font-mono text-[0.7rem] text-rift-mist/80">
-                      {(order.orderNumber as string) || String(order._id).slice(-8)}
-                    </span>
-                  </td>
-                  <td className="py-3 px-6">
-                    <div>
-                      <p className="text-xs font-medium">
-                        {typeof order.userId === "object" && order.userId !== null
-                          ? String((order.userId as { name?: string }).name || "Guest")
-                          : "Guest"}
-                      </p>
-                      <p className="text-[0.6rem] text-rift-mist/40 mt-0.5">
-                        {typeof order.userId === "object" && order.userId !== null
-                          ? String((order.userId as { email?: string }).email || "")
-                          : ""}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="py-3 px-6">
-                    <span className="text-xs font-medium">{formatPrice(order.total as number)}</span>
-                  </td>
-                  <td className="py-3 px-6">
-                    <select
-                      value={order.status as string}
-                      onChange={(e) => updateOrderStatus(order._id as string, e.target.value)}
-                      className={`px-2.5 py-1 rounded-lg text-[0.6rem] tracking-wider uppercase border bg-transparent cursor-pointer focus:outline-none ${STATUS_COLORS[order.status as string] || "bg-white/5 text-rift-mist/60 border-white/5"}`}
-                    >
-                      {STATUS_OPTIONS.map((s) => (
-                        <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="py-3 px-6">
-                    <span className="text-[0.7rem] text-rift-mist/50">
-                      {new Date(order.createdAt as string).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {filteredOrders.slice(0, 10).map((order) => {
+                const customer =
+                  typeof order.userId === "object" && order.userId !== null
+                    ? order.userId
+                    : null;
+
+                return (
+                  <tr
+                    key={order._id}
+                    className="border-b border-rift-mist/5 last:border-0 hover:bg-white/[0.02] transition-colors"
+                  >
+                    <td className="py-3 px-6">
+                      <span className="font-mono text-[0.7rem] text-rift-mist/80">
+                        {order.orderNumber || order._id.slice(-8)}
+                      </span>
+                    </td>
+
+                    <td className="py-3 px-6">
+                      <div>
+                        <p className="text-xs font-medium">
+                          {customer?.name || "Guest"}
+                        </p>
+                        <p className="text-[0.6rem] text-rift-mist/40 mt-0.5">
+                          {customer?.email || ""}
+                        </p>
+                      </div>
+                    </td>
+
+                    <td className="py-3 px-6">
+                      <span className="text-xs font-medium">
+                        {formatPrice(order.total ?? 0)}
+                      </span>
+                    </td>
+
+                    <td className="py-3 px-6">
+                      <select
+                        value={order.status}
+                        onChange={(event) =>
+                          updateOrderStatus(order._id, event.target.value)
+                        }
+                        className={`px-2.5 py-1 rounded-lg text-[0.6rem] tracking-wider uppercase border bg-transparent cursor-pointer focus:outline-none ${
+                          STATUS_COLORS[order.status] ||
+                          "bg-white/5 text-rift-mist/60 border-white/5"
+                        }`}
+                      >
+                        {STATUS_OPTIONS.map((status) => (
+                          <option key={status} value={status}>
+                            {STATUS_LABELS[status]}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+
+                    <td className="py-3 px-6">
+                      <span className="text-[0.7rem] text-rift-mist/50">
+                        {order.createdAt
+                          ? new Date(order.createdAt).toLocaleDateString(
+                              "en-US",
+                              { month: "short", day: "numeric" }
+                            )
+                          : "—"}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+
               {filteredOrders.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-xs text-rift-mist/40">
+                  <td
+                    colSpan={5}
+                    className="py-8 text-center text-xs text-rift-mist/40"
+                  >
                     No orders found
                   </td>
                 </tr>
